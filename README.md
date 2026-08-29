@@ -24,8 +24,14 @@ properly formatted XML.
 
 ## Download
 
-Prebuilt releases are available on the [Releases](https://github.com/lfisbeck650-cloud/wii-meta-editor/releases) page,
-including a `.deb` package for Debian/Ubuntu.
+Prebuilt releases are available on the [Releases](https://github.com/lfisbeck650-cloud/wii-meta-editor/releases) page
+with three installation options:
+
+| Asset                                         | For who                                              |
+|-----------------------------------------------|------------------------------------------------------|
+| `wii-meta-editor_<version>_amd64.deb`         | Debian/Ubuntu users (`.deb` package install)         |
+| `wii-meta-editor-<version>-amd64.AppImage`    | Any Linux distro (portable, bundles its own libs)    |
+| `wii-meta-editor` (raw binary)                | Any Linux with GTK3 + libxml2 already installed      |
 
 ### Install the .deb
 
@@ -35,6 +41,31 @@ sudo apt install ./wii-meta-editor_<version>_amd64.deb
 
 This installs the binary, a desktop entry and an icon. Afterwards launch
 **Wii Meta Editor** from your app menu, or run `wii-meta-editor`.
+
+### Run the AppImage
+
+AppImages are portable and don't need installation. Make it executable and run:
+
+```sh
+chmod +x wii-meta-editor-<version>-amd64.AppImage
+./wii-meta-editor-<version>-amd64.AppImage
+```
+
+If you use a file manager, simply double-click the AppImage. To open a
+specific file, pass it as an argument:
+
+```sh
+./wii-meta-editor-<version>-amd64.AppImage path/to/meta.xml
+```
+
+### Run the raw binary
+
+You need GTK3 and libxml2 installed, then:
+
+```sh
+chmod +x wii-meta-editor
+./wii-meta-editor
+```
 
 ## Build from source
 
@@ -79,16 +110,24 @@ wii-meta-editor path/to/meta.xml   # open a specific file
 sudo make uninstall
 ```
 
-### Building a .deb yourself
+### Building packages from source
 
-To build a Debian package from source:
+Build a Debian package:
 
 ```sh
 make deb          # produces wii-meta-editor_<version>_amd64.deb
 ```
 
+Build a portable AppImage (requires `linuxdeploy` on your `PATH`):
+
+```sh
+make appimage     # produces wii-meta-editor-<version>-amd64.AppImage
+```
+
+The standalone binary is produced by the default `make` target.
+
 The version is derived from the latest git tag; override it with `make deb
-VERSION=1.2.3` if needed.
+VERSION=1.2.3` (or `make appimage VERSION=1.2.3`) if needed.
 
 ### Make targets
 
@@ -98,7 +137,9 @@ VERSION=1.2.3` if needed.
 | `make install`       | Install binary, desktop entry and icon (root)          |
 | `make uninstall`     | Remove installed files (root)                          |
 | `make deb`           | Build a `.deb` package                                 |
-| `make clean`         | Remove build artifacts and the binary                  |
+| `make appimage`      | Build a portable AppImage (needs `linuxdeploy`)        |
+| `make binary`        | Alias for the default compile (`wii-meta-editor`)      |
+| `make clean`         | Remove build artifacts and the package outputs         |
 
 ## Project layout
 

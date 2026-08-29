@@ -4,4 +4,7 @@ wii-meta-editor
 *.o
 *.orig
 *.deb
+*.AppImage
 pkg/
+AppDir/
+squashfs-root/
