@@ -1,0 +1,12 @@
+Package: wii-meta-editor
+Version: 0.1.0
+Architecture: amd64
+Maintainer: Lennart Fisbeck <lfisbeck650-cloud@users.noreply.github.com>
+Depends: libgtk-3-0, libxml2
+Section: utils
+Priority: optional
+Homepage: https://github.com/lfisbeck650-cloud/wii-meta-editor
+Description: Wii Homebrew Channel meta.xml editor
+ A lightweight GTK3 editor for the meta.xml file of the Wii
+ Homebrew Channel. Opens, edits and saves meta.xml as clean,
+ properly formatted UTF-8 XML.

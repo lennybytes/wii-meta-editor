@@ -20,26 +20,44 @@ properly formatted XML.
 
 ## Screenshot
 
-*(Add a screenshot here if you like.)*
+![Wii Meta Editor](screenshots/screenshot1.png)
 
-## Build requirements
+## Download
 
-- A C compiler (`gcc` recommended)
-- [GTK+ 3](https://www.gtk.org/)
-- [libxml2](http://xmlsoft.org/)
-- `pkg-config`
+Prebuilt releases are available on the [Releases](https://github.com/lfisbeck650-cloud/wii-meta-editor/releases) page,
+including a `.deb` package for Debian/Ubuntu.
 
-On Debian/Ubuntu:
+### Install the .deb
 
 ```sh
-sudo apt install build-essential pkg-config libgtk-3-dev libxml2-dev
+sudo apt install ./wii-meta-editor_<version>_amd64.deb
 ```
 
-## Build & install
+This installs the binary, a desktop entry and an icon. Afterwards launch
+**Wii Meta Editor** from your app menu, or run `wii-meta-editor`.
+
+## Build from source
+
+### Requirements (Debian/Ubuntu)
+
+Install the build dependencies with:
 
 ```sh
-make            # compile the binary
-sudo make install   # install to /usr/local
+sudo apt install git build-essential pkg-config libgtk-3-dev libxml2-dev
+```
+
+### 1. Clone & build
+
+```sh
+git clone https://github.com/lfisbeck650-cloud/wii-meta-editor.git
+cd wii-meta-editor
+make               # compiles the binary into ./wii-meta-editor
+```
+
+### 2. Install
+
+```sh
+sudo make install
 ```
 
 `make install` installs:
@@ -48,14 +66,39 @@ sudo make install   # install to /usr/local
 - `/usr/local/share/applications/io.homebrew.WiiMetaEditor.desktop`
 - `/usr/local/share/icons/hicolor/scalable/apps/io.homebrew.WiiMetaEditor.svg`
 
-### Other make targets
+### 3. Run
 
-| Command              | Description                                      |
-|----------------------|--------------------------------------------------|
-| `make` / `make all`  | Compile the binary from `src/`                   |
-| `make install`       | Install binary, desktop entry and icon (root)    |
-| `make uninstall`     | Remove installed files (root)                    |
-| `make clean`         | Remove build artifacts and the binary            |
+```sh
+wii-meta-editor                    # open the editor
+wii-meta-editor path/to/meta.xml   # open a specific file
+```
+
+### Uninstall
+
+```sh
+sudo make uninstall
+```
+
+### Building a .deb yourself
+
+To build a Debian package from source:
+
+```sh
+make deb          # produces wii-meta-editor_<version>_amd64.deb
+```
+
+The version is derived from the latest git tag; override it with `make deb
+VERSION=1.2.3` if needed.
+
+### Make targets
+
+| Command              | Description                                            |
+|----------------------|--------------------------------------------------------|
+| `make` / `make all`  | Compile the binary from `src/`                         |
+| `make install`       | Install binary, desktop entry and icon (root)          |
+| `make uninstall`     | Remove installed files (root)                          |
+| `make deb`           | Build a `.deb` package                                 |
+| `make clean`         | Remove build artifacts and the binary                  |
 
 ## Project layout
 
@@ -71,6 +114,9 @@ sudo make install   # install to /usr/local
 │   └── meta.c        # pure XML logic (libxml2, date handling)
 ├── io.homebrew.WiiMetaEditor.desktop
 ├── io.homebrew.WiiMetaEditor.svg
+├── debian/
+│   └── control       # metadata for the .deb package
+├── screenshots/
 └── README.md
 ```
 

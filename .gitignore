@@ -1,5 +1,7 @@
-build/
+build*/
 wii-meta-editor
 *.d
 *.o
 *.orig
+*.deb
+pkg/
