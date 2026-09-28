@@ -54,7 +54,7 @@ static gboolean file_is_empty(const char *path)
  *   09.12.2023
  *   09.12.23
  *
- * Returns a compact static buffer, or NULL when the input is not a date.
+ * Returns a newly allocated string, or NULL when the input is not a date.
  */
 gchar *meta_normalize_date(const char *in)
 {
@@ -190,6 +190,81 @@ gboolean meta_save_to_path(const MetaData *meta, const char *path, GError **err)
     if (wrote < 0) {
         g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
                     "Could not write the file '%s'.", path);
+        return FALSE;
+    }
+    return TRUE;
+}
+
+/* ---- XML Preview -------------------------------------------------------- */
+
+/*
+ * Generates the XML string that would be written to disk.
+ * Returns a newly allocated string (must be freed by the caller).
+ */
+gchar *meta_generate_xml(const MetaData *meta, GError **err)
+{
+    gchar *norm_date = meta_normalize_date(meta->release_date);
+    if (!norm_date) {
+        g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
+                    "Invalid date: '%s'.\n"
+                    "Expected: YYYY-MM-DD, DD.MM.YYYY or YYYYMMDDHHMMSS.",
+                    meta->release_date);
+        return NULL;
+    }
+
+    xmlDocPtr doc = xmlNewDoc((const xmlChar *)"1.0");
+    xmlNodePtr app = xmlNewNode(NULL, (const xmlChar *)"app");
+    xmlSetProp(app, (const xmlChar *)"version", (const xmlChar *)"1");
+    xmlDocSetRootElement(doc, app);
+
+    xmlNewTextChild(app, NULL, (const xmlChar *)"name", (const xmlChar *)meta->app_name);
+    xmlNewTextChild(app, NULL, (const xmlChar *)"version", (const xmlChar *)meta->version);
+    xmlNewTextChild(app, NULL, (const xmlChar *)"release_date", (const xmlChar *)norm_date);
+    xmlNewTextChild(app, NULL, (const xmlChar *)"coder", (const xmlChar *)meta->coder);
+    xmlNewTextChild(app, NULL, (const xmlChar *)"short_description",
+                    (const xmlChar *)meta->short_description);
+
+    xmlNodePtr ld = xmlNewChild(app, NULL, (const xmlChar *)"long_description", NULL);
+    xmlNodeSetContent(ld, (const xmlChar *)meta->long_description);
+
+    if (meta->ahb_access)
+        xmlNewTextChild(app, NULL, (const xmlChar *)"ahb_access", (const xmlChar *)"");
+
+    xmlChar *xmlbuff;
+    int buffersize;
+    xmlDocDumpFormatMemoryEnc(doc, &xmlbuff, &buffersize, "UTF-8", 1);
+
+    gchar *result = g_strdup((const char *)xmlbuff);
+
+    xmlFree(xmlbuff);
+    xmlFreeDoc(doc);
+    g_free(norm_date);
+
+    return result;
+}
+
+/* ---- Validation --------------------------------------------------------- */
+
+gboolean meta_validate(const MetaData *meta, GError **err)
+{
+    if (!meta->app_name || strlen(meta->app_name) == 0) {
+        g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
+                    "App name is required.");
+        return FALSE;
+    }
+    if (!meta->version || strlen(meta->version) == 0) {
+        g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
+                    "Version is required.");
+        return FALSE;
+    }
+    if (!meta->release_date || strlen(meta->release_date) == 0) {
+        g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
+                    "Release date is required.");
+        return FALSE;
+    }
+    if (!meta_normalize_date(meta->release_date)) {
+        g_set_error(err, G_IO_ERROR, G_IO_ERROR_FAILED,
+                    "Invalid date format. Use YYYY-MM-DD, DD.MM.YYYY or YYYYMMDDHHMMSS.");
         return FALSE;
     }
     return TRUE;

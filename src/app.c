@@ -119,3 +119,52 @@ void app_save_as(App *app)
     }
     gtk_widget_destroy(dialog);
 }
+
+/* ---- Templates ---------------------------------------------------------- */
+
+void app_new_template(App *app)
+{
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "New Template", GTK_WINDOW(app->window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Cancel", GTK_RESPONSE_CANCEL,
+        "_Create", GTK_RESPONSE_ACCEPT, NULL);
+
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    GtkWidget *label = gtk_label_new("Select a template:");
+    gtk_container_add(GTK_CONTAINER(content), label);
+
+    GtkWidget *combo = gtk_combo_box_text_new();
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), "Basic Homebrew App");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), "Game with ahb_access");
+    gtk_combo_box_text_append_text(GTK_COMBO_BOX_TEXT(combo), "Utility Tool");
+    gtk_combo_box_set_active(GTK_COMBO_BOX(combo), 0);
+    gtk_container_add(GTK_CONTAINER(content), combo);
+
+    gtk_widget_show_all(dialog);
+
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        gint active = gtk_combo_box_get_active(GTK_COMBO_BOX(combo));
+        gui_apply_template(app, active);
+    }
+    gtk_widget_destroy(dialog);
+}
+
+/* ---- Validation --------------------------------------------------------- */
+
+void app_validate(App *app)
+{
+    MetaData meta;
+    memset(&meta, 0, sizeof(meta));
+    gui_collect(app, &meta);
+
+    GError *err = NULL;
+    if (meta_validate(&meta, &err)) {
+        gui_show_message(app, GTK_MESSAGE_INFO, "All fields are valid!");
+    } else {
+        gui_show_message(app, GTK_MESSAGE_WARNING, "%s", err->message);
+        g_error_free(err);
+    }
+
+    meta_free(&meta);
+}

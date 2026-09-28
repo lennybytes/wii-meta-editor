@@ -17,6 +17,7 @@
 #define APP_ID      "io.homebrew.WiiMetaEditor"
 #define APP_NAME    "Wii Meta Editor"
 #define APP_ICON    APP_ID
+#define APP_VERSION "2.0.0"
 
 /* The editable fields, as exposed by the GUI and consumed by the XML layer. */
 typedef struct {
@@ -54,12 +55,16 @@ void gui_set_status(App *app, const char *fmt, ...) G_GNUC_PRINTF(2, 3);
 void gui_populate(App *app, const MetaData *meta);
 void gui_collect(App *app, MetaData *meta);
 void gui_clear(App *app);
+void gui_show_xml_preview(App *app);
+void gui_apply_template(App *app, int template_id);
 
 /* app.c: controller glue between the GUI and the XML layer. */
 void  app_open_dialog(App *app);
 void  app_save_current(App *app);
 void  app_save_as(App *app);
 gboolean app_load_file(App *app, const char *path, GError **err);
+void  app_new_template(App *app);
+void  app_validate(App *app);
 
 /* meta.c: pure XML reading/writing (no GUI dependencies). */
 MetaData *meta_load_from_path(const char *path, gboolean *was_empty, GError **err);
@@ -68,5 +73,7 @@ MetaData *meta_new(void);
 void      meta_free(MetaData *meta);
 gchar    *meta_normalize_date(const char *in);
 gchar    *meta_pretty_date(const char *xmldate);
+gchar    *meta_generate_xml(const MetaData *meta, GError **err);
+gboolean  meta_validate(const MetaData *meta, GError **err);
 
 #endif /* WII_META_EDITOR_APP_H */

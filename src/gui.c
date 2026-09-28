@@ -119,6 +119,94 @@ void gui_show_message(App *app, GtkMessageType type, const char *fmt, ...)
     g_free(msg);
 }
 
+/* ---- XML Preview -------------------------------------------------------- */
+
+void gui_show_xml_preview(App *app)
+{
+    MetaData meta;
+    memset(&meta, 0, sizeof(meta));
+    gui_collect(app, &meta);
+
+    GError *err = NULL;
+    gchar *xml = meta_generate_xml(&meta, &err);
+    if (!xml) {
+        gui_show_message(app, GTK_MESSAGE_ERROR, "%s", err->message);
+        g_error_free(err);
+        meta_free(&meta);
+        return;
+    }
+
+    GtkWidget *dialog = gtk_dialog_new_with_buttons(
+        "XML Preview", GTK_WINDOW(app->window),
+        GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+        "_Close", GTK_RESPONSE_CLOSE, NULL);
+
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    GtkWidget *scrolled = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+    gtk_widget_set_size_request(scrolled, 500, 400);
+
+    GtkWidget *text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), FALSE);
+    gtk_text_view_set_monospace(GTK_TEXT_VIEW(text_view), TRUE);
+    GtkTextBuffer *buf = gtk_text_view_get_buffer(GTK_TEXT_VIEW(text_view));
+    gtk_text_buffer_set_text(buf, xml, -1);
+
+    gtk_container_add(GTK_CONTAINER(scrolled), text_view);
+    gtk_container_add(GTK_CONTAINER(content), scrolled);
+
+    gtk_widget_show_all(dialog);
+    gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    g_free(xml);
+    meta_free(&meta);
+}
+
+/* ---- Templates ---------------------------------------------------------- */
+
+void gui_apply_template(App *app, int template_id)
+{
+    MetaData meta;
+    memset(&meta, 0, sizeof(meta));
+
+    switch (template_id) {
+    case 0: /* Basic Homebrew App */
+        meta.app_name = g_strdup("My Homebrew App");
+        meta.version = g_strdup("1.0");
+        meta.coder = g_strdup("Your Name");
+        meta.release_date = g_strdup("2026-01-01");
+        meta.short_description = g_strdup("A homebrew application for the Wii");
+        meta.long_description = g_strdup("This is a homebrew application for the Wii. Edit this description to tell users about your app.");
+        meta.ahb_access = 0;
+        break;
+    case 1: /* Game with ahb_access */
+        meta.app_name = g_strdup("My Wii Game");
+        meta.version = g_strdup("1.0");
+        meta.coder = g_strdup("Your Name");
+        meta.release_date = g_strdup("2026-01-01");
+        meta.short_description = g_strdup("An exciting Wii game");
+        meta.long_description = g_strdup("This is a game for the Wii that uses ahb_access for direct hardware access.");
+        meta.ahb_access = 1;
+        break;
+    case 2: /* Utility Tool */
+        meta.app_name = g_strdup("Wii Utility Tool");
+        meta.version = g_strdup("1.0");
+        meta.coder = g_strdup("Your Name");
+        meta.release_date = g_strdup("2026-01-01");
+        meta.short_description = g_strdup("A useful utility for the Wii");
+        meta.long_description = g_strdup("This is a utility tool for the Wii. Edit this description to explain what your tool does.");
+        meta.ahb_access = 0;
+        break;
+    }
+
+    gui_populate(app, &meta);
+    gui_set_status(app, "Template applied");
+
+    meta_free(&meta);
+}
+
 /* ---- Window construction ------------------------------------------------ */
 
 void gui_build(App *app)
@@ -140,12 +228,21 @@ void gui_build(App *app)
     GtkWidget *btn_open = gtk_button_new_with_label("Open");
     GtkWidget *btn_save = gtk_button_new_with_label("Save");
     GtkWidget *btn_save_as = gtk_button_new_with_label("Save As");
+    GtkWidget *btn_new = gtk_button_new_with_label("New");
+    GtkWidget *btn_preview = gtk_button_new_with_label("Preview");
+    GtkWidget *btn_validate = gtk_button_new_with_label("Validate");
     gtk_widget_set_tooltip_text(btn_open, "Select a meta.xml file");
     gtk_widget_set_tooltip_text(btn_save, "Save to the currently open file");
     gtk_widget_set_tooltip_text(btn_save_as, "Save to a new location");
+    gtk_widget_set_tooltip_text(btn_new, "Create a new meta.xml from a template");
+    gtk_widget_set_tooltip_text(btn_preview, "Preview the generated XML");
+    gtk_widget_set_tooltip_text(btn_validate, "Validate all fields");
     gtk_header_bar_pack_start(GTK_HEADER_BAR(header), btn_open);
-    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), btn_save);
+    gtk_header_bar_pack_start(GTK_HEADER_BAR(header), btn_new);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), btn_preview);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), btn_validate);
     gtk_header_bar_pack_end(GTK_HEADER_BAR(header), btn_save_as);
+    gtk_header_bar_pack_end(GTK_HEADER_BAR(header), btn_save);
 
     GtkAccelGroup *accel = gtk_accel_group_new();
     gtk_window_add_accel_group(GTK_WINDOW(app->window), accel);
@@ -155,10 +252,19 @@ void gui_build(App *app)
                                GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
     gtk_widget_add_accelerator(btn_save_as, "clicked", accel, GDK_KEY_s,
                                GDK_CONTROL_MASK | GDK_SHIFT_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(btn_new, "clicked", accel, GDK_KEY_n,
+                               GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(btn_preview, "clicked", accel, GDK_KEY_p,
+                               GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
+    gtk_widget_add_accelerator(btn_validate, "clicked", accel, GDK_KEY_v,
+                               GDK_CONTROL_MASK, GTK_ACCEL_VISIBLE);
 
     g_signal_connect_swapped(btn_open, "clicked", G_CALLBACK(app_open_dialog), app);
     g_signal_connect_swapped(btn_save, "clicked", G_CALLBACK(app_save_current), app);
     g_signal_connect_swapped(btn_save_as, "clicked", G_CALLBACK(app_save_as), app);
+    g_signal_connect_swapped(btn_new, "clicked", G_CALLBACK(app_new_template), app);
+    g_signal_connect_swapped(btn_preview, "clicked", G_CALLBACK(gui_show_xml_preview), app);
+    g_signal_connect_swapped(btn_validate, "clicked", G_CALLBACK(app_validate), app);
 
     GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 8);
     gtk_container_set_border_width(GTK_CONTAINER(vbox), 12);
