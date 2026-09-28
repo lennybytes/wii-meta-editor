@@ -6,9 +6,8 @@ License:        GPL-2.0
 URL:            https://github.com/lennybytes/wii-meta-editor
 Source0:        %{name}-%{version}.tar.gz
 BuildArch:      x86_64
-
-BuildRequires:  gcc make pkg-config gtk3-devel libxml2-devel
-Requires:       gtk3 libxml2
+AutoReqProv:    no
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
 A lightweight GTK3 editor for the meta.xml file of the Wii Homebrew Channel.
@@ -22,12 +21,15 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT
+make install-staging DESTDIR=$RPM_BUILD_ROOT
 
 %files
 %{_bindir}/wii-meta-editor
 %{_datadir}/applications/io.homebrew.WiiMetaEditor.desktop
 %{_datadir}/icons/hicolor/scalable/apps/io.homebrew.WiiMetaEditor.svg
+
+%clean
+rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Mon Sep 28 2026 Lenny <lenny@example.com> - 2.0.0-1
