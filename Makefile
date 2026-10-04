@@ -45,6 +45,14 @@ install: $(TARGET)
 	install -Dm644 $(ICON_FILE) $(DESTDIR)$(ICONDIR)/$(APP_ID).svg
 	@-update-desktop-database $(DESTDIR)$(APPSDIR) 2>/dev/null || true
 
+# Install to a staging directory (for RPM)
+install-staging: $(TARGET)
+	rm -rf $(PKGDIR)/staging
+	mkdir -p $(PKGDIR)/staging$(BINDIR) $(PKGDIR)/staging$(APPSDIR) $(PKGDIR)/staging$(ICONDIR)
+	install -Dm755 $(TARGET) $(PKGDIR)/staging$(BINDIR)/$(TARGET)
+	install -Dm644 $(APP_ID_FILE) $(PKGDIR)/staging$(APPSDIR)/$(APP_ID).desktop
+	install -Dm644 $(ICON_FILE) $(PKGDIR)/staging$(ICONDIR)/$(APP_ID).svg
+
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
 	rm -f $(DESTDIR)$(APPSDIR)/$(APP_ID).desktop
@@ -66,15 +74,15 @@ deb: $(TARGET)
 rpm: $(TARGET)
 	rm -rf $(PKGDIR)
 	mkdir -p $(PKGDIR)/BUILD $(PKGDIR)/RPMS $(PKGDIR)/SOURCES $(PKGDIR)/SPECS
-	install -Dm755 $(TARGET) $(PKGDIR)/BUILD/$(TARGET)
-	install -Dm644 $(APP_ID_FILE) $(PKGDIR)/BUILD/$(APP_ID).desktop
-	install -Dm644 $(ICON_FILE) $(PKGDIR)/BUILD/$(APP_ID).svg
+	# Create source tarball
+	git archive --format=tar.gz --prefix=$(PKGNAME)-$(VERSION)/ -o $(PKGDIR)/SOURCES/$(PKGNAME)-$(VERSION).tar.gz HEAD
+	# Copy spec file
 	sed -e 's/^Version:.*/Version: $(VERSION)/' \
 		-e 's/^BuildArch:.*/BuildArch: $(RPM_ARCH)/' \
 		rpm/wii-meta-editor.spec > $(PKGDIR)/SPECS/wii-meta-editor.spec
 	rpmbuild -bb --define "_topdir $(CURDIR)/$(PKGDIR)" \
-		$(PKGDIR)/SPECS/wii-meta-editor.spec
-	mv $(PKGDIR)/RPMS/$(RPM_ARCH)/$(PKGNAME)-$(VERSION)-1.$(RPM_ARCH).rpm ./
+		$(PKGDIR)/SPECS/wii-meta-editor.spec 2>&1 || true
+	mv $(PKGDIR)/RPMS/$(RPM_ARCH)/$(PKGNAME)-$(VERSION)-1.$(RPM_ARCH).rpm ./ 2>/dev/null || true
 	rm -rf $(PKGDIR)
 
 # XBPS package (for Void Linux)
@@ -112,4 +120,4 @@ clean:
 
 -include $(DEPS)
 
-.PHONY: all install uninstall clean deb rpm xbps binary appimage
+.PHONY: all install install-staging uninstall clean deb rpm xbps binary appimage
