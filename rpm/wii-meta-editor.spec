@@ -21,7 +21,12 @@ make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install-staging DESTDIR=$RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/%{_bindir}
+mkdir -p $RPM_BUILD_ROOT/%{_datadir}/applications
+mkdir -p $RPM_BUILD_ROOT/%{_datadir}/icons/hicolor/scalable/apps
+install -m755 wii-meta-editor $RPM_BUILD_ROOT/%{_bindir}/wii-meta-editor
+install -m644 io.homebrew.WiiMetaEditor.desktop $RPM_BUILD_ROOT/%{_datadir}/applications/
+install -m644 io.homebrew.WiiMetaEditor.svg $RPM_BUILD_ROOT/%{_datadir}/icons/hicolor/scalable/apps/
 
 %files
 %{_bindir}/wii-meta-editor
